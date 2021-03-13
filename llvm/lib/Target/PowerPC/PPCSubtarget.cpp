@@ -136,6 +136,9 @@ void PPCSubtarget::initializeEnvironment() {
   PredictableSelectIsExpensive = false;
   HasModernAIXAs = false;
   IsAIX = false;
+  HasPaired = false;
+  HasPairedExt = false;
+  HasDCBZL = false;
 
   HasPOPCNTD = POPCNTD_Unavailable;
 }
@@ -171,9 +174,19 @@ void PPCSubtarget::initSubtargetFeatures(StringRef CPU, StringRef FS) {
 
   if (HasSPE && IsPPC64)
     report_fatal_error( "SPE is only supported for 32-bit targets.\n", false);
+  if (HasPaired && IsPPC64)
+    report_fatal_error("Paired Singles is only supported for 32-bit targets.\n",
+                       false);
+  if (HasDCBZL && IsPPC64)
+    report_fatal_error("Locked Cache is only supported for 32-bit targets.\n",
+                       false);
   if (HasSPE && (HasAltivec || HasVSX || HasFPU))
     report_fatal_error(
         "SPE and traditional floating point cannot both be enabled.\n", false);
+  if (HasPaired && (HasAltivec || HasVSX))
+    report_fatal_error(
+        "Paired Singles and other Vector extensions cannot both be enabled.\n",
+        false);
 
   // If not SPE, set standard FPU
   if (!HasSPE)
