@@ -1116,6 +1116,9 @@ def IsPPC4xx  : Predicate<"Subtarget->isPPC4xx()">;
 def IsPPC6xx  : Predicate<"Subtarget->isPPC6xx()">;
 def IsE500  : Predicate<"Subtarget->isE500()">;
 def HasSPE  : Predicate<"Subtarget->hasSPE()">;
+def HasPaired : Predicate<"Subtarget->hasPaired()">;
+def HasPairedExt : Predicate<"Subtarget->hasPairedExt()">;
+def HasDCBZL : Predicate<"Subtarget->hasDCBZL()">;
 def HasICBT : Predicate<"Subtarget->hasICBT()">;
 def HasPartwordAtomics : Predicate<"Subtarget->hasPartwordAtomics()">;
 def NoNaNsFPMath
@@ -1948,6 +1951,11 @@ def DCBZL  : DCB_Form<1014, 1, (outs), (ins memrr:$dst), "dcbzl $dst",
 def DCBF   : DCB_Form_hint<86, (outs), (ins u3imm:$TH, memrr:$dst),
                       "dcbf $dst, $TH", IIC_LdStDCBF, []>,
                       PPC970_DGroup_Single;
+
+let Predicates = [HasDCBZL] in {
+  def DCBZ_L : PSForm_x0ab<1014, (outs), (ins memrr:$dst), "dcbz_l $dst",
+                          IIC_LdStDCBF, [(int_ppc_dcbz_l xoaddr:$dst)]>;
+}
 
 let hasSideEffects = 0, mayLoad = 1, mayStore = 1 in {
 def DCBT   : DCB_Form_hint<278, (outs), (ins u5imm:$TH, memrr:$dst),

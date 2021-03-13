@@ -1495,3 +1495,8 @@ let TargetPrefix = "ppc" in {
                   [llvm_v512i1_ty, llvm_v16i8_ty, llvm_v16i8_ty, llvm_i32_ty,
                    llvm_i32_ty, llvm_i32_ty], [IntrNoMem]>;
 }
+
+
+let TargetPrefix = "ppc" in {
+  def int_ppc_dcbz_l : Intrinsic<[], [llvm_ptr_ty], []>;
+} 

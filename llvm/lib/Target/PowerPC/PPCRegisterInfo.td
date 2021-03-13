@@ -59,7 +59,7 @@ class FPR<bits<5> num, string n> : PPCReg<n> {
 }
 
 // PSF - One of the 32 2x32-bit floating-point registers
-class PSF<bits<5> num, string n> : PPCReg<N> {
+class PSF<bits<5> num, string n> : PPCReg<n> {
   let HWEncoding{4-0} = num;
 
 
