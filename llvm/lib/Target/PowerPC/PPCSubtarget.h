@@ -156,6 +156,9 @@ protected:
   bool PredictableSelectIsExpensive;
   bool HasModernAIXAs;
   bool IsAIX;
+  bool HasPaired;
+  bool HasPairedExt;
+  bool HasDCBZL;
 
   POPCNTDKind HasPOPCNTD;
 
@@ -293,6 +296,9 @@ public:
   bool allowsUnalignedFPAccess() const { return AllowsUnalignedFPAccess; }
   bool isDeprecatedDST() const { return DeprecatedDST; }
   bool hasICBT() const { return HasICBT; }
+  bool hasPaired() const { return HasPaired; }
+  bool hasPairedExt() const { return HasPairedExt; }
+  bool hasDCBZL() const { return HasDCBZL; }
   bool hasInvariantFunctionDescriptors() const {
     return HasInvariantFunctionDescriptors;
   }

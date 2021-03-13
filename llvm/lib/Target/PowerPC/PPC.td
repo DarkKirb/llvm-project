@@ -96,6 +96,14 @@ def FeatureFRES      : SubtargetFeature<"fres", "HasFRES", "true",
 def FeatureFRSQRTE   : SubtargetFeature<"frsqrte", "HasFRSQRTE", "true",
                                         "Enable the frsqrte instruction",
                                         [FeatureFPU]>;
+def FeaturePaired    : SubtargetFeature<"paired", "HasPaired", "true",
+                                        "Enable Paired Single instructions",
+                                        [FeatureFPU, FeatureFRES, FeatureFRSQRTE]>;
+def FeaturePairedExt : SubtargetFeature<"pairedext", "HasPairedExt", "true",
+                                        "Enable Paired Single immediate load/stores",
+                                        [FeaturePaired]>;
+def FeatureDCBZL     : SubtargetFeature<"dcbz_l", "HasDCBZL", "true",
+                                        "Enable the dcbz_l instruction">;
 def FeatureFRSQRTES  : SubtargetFeature<"frsqrtes", "HasFRSQRTES", "true",
                                         "Enable the frsqrtes instruction",
                                         [FeatureFPU]>;
@@ -489,6 +497,18 @@ def : Processor<"620", G3Itineraries, [Directive620,
 def : Processor<"750", G4Itineraries, [Directive750,
                                        FeatureFRES, FeatureFRSQRTE,
                                        FeatureMFTB]>;
+def : Processor<"gekko", G4Itineraries, [Directive750,
+                                         FeatureFRES, FeatureFRSQRTE,
+                                         FeatureMFTB, FeaturePaired,
+                                         FeaturePairedExt, FeatureDCBZL]>;
+def : Processor<"750cl", G4Itineraries, [Directive750,
+                                         FeatureFRES, FeatureFRSQRTE,
+                                         FeatureMFTB, FeaturePaired,
+                                         FeatureDCBZL]>;
+def : Processor<"broadway", G4Itineraries, [Directive750,
+                                            FeatureFRES, FeatureFRSQRTE,
+                                            FeatureMFTB, FeaturePaired,
+                                            FeaturePairedExt, FeatureDCBZL]>;
 def : Processor<"g3", G3Itineraries, [Directive750,
                                       FeatureFRES, FeatureFRSQRTE,
                                       FeatureMFTB]>;
