@@ -1996,16 +1996,19 @@ void PPCFrameLowering::processFunctionBeforeFrameFinalized(MachineFunction &MF,
   unsigned MinGPR = PPC::R31;
   unsigned MinG8R = PPC::X31;
   unsigned MinFPR = PPC::F31;
+  unsigned MinPSF = PPC::F31;
   unsigned MinVR = Subtarget.hasSPE() ? PPC::S31 : PPC::V31;
 
   bool HasGPSaveArea = false;
   bool HasG8SaveArea = false;
   bool HasFPSaveArea = false;
+  bool HasPSSaveArea = false;
   bool HasVRSaveArea = false;
 
   SmallVector<CalleeSavedInfo, 18> GPRegs;
   SmallVector<CalleeSavedInfo, 18> G8Regs;
   SmallVector<CalleeSavedInfo, 18> FPRegs;
+  SmallVector<CalleeSavedInfo, 18> PSRegs;
   SmallVector<CalleeSavedInfo, 18> VRegs;
 
   for (unsigned i = 0, e = CSI.size(); i != e; ++i) {
@@ -2036,6 +2039,14 @@ void PPCFrameLowering::processFunctionBeforeFrameFinalized(MachineFunction &MF,
 
       if (Reg < MinFPR) {
         MinFPR = Reg;
+      }
+    } else if (PPC::PSRCRegClass.contains(Reg)) {
+      HasPSSaveArea = true;
+
+      PSRegs.push_back(CSI[i]);
+
+      if (Reg < MinPSF) {
+        MinPSF = Reg;
       }
     } else if (PPC::CRBITRCRegClass.contains(Reg) ||
                PPC::CRRCRegClass.contains(Reg)) {
@@ -2078,6 +2089,18 @@ void PPCFrameLowering::processFunctionBeforeFrameFinalized(MachineFunction &MF,
     }
 
     LowerBound -= (31 - TRI->getEncodingValue(MinFPR) + 1) * 8;
+  }
+
+  // The Paired-Single register save area is right below the back chain word
+  // of the previous stack frame.
+  if (HasPSSaveArea) {
+    for (unsigned i = 0, e = PSRegs.size(); i != e; ++i) {
+      int PI = PSRegs[i].getFrameIdx();
+
+      MFI.setObjectOffset(PI, LowerBound + MFI.getObjectOffset(PI));
+    }
+
+    LowerBound -= (31 - TRI->getEncodingValue(MinPSF) + 1) * 8;
   }
 
   // Check whether the frame pointer register is allocated. If so, make sure it

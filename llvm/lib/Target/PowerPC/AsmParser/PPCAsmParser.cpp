@@ -334,6 +334,9 @@ public:
 
   bool isU10Imm() const { return Kind == Immediate && isUInt<10>(getImm()); }
   bool isU12Imm() const { return Kind == Immediate && isUInt<12>(getImm()); }
+  bool isS12Imm() const {
+    return Kind == Expression || (Kind == Immediate && isInt<12>(getImm()));
+  }
   bool isU16Imm() const {
     switch (Kind) {
       case Expression:
@@ -477,6 +480,11 @@ public:
     Inst.addOperand(MCOperand::createReg(FRegs[getReg()]));
   }
 
+  void addRegPSRCOperands(MCInst &Inst, unsigned N) const {
+    assert(N == 1 && "Invalid number of operands!");
+    Inst.addOperand(MCOperand::createReg(PSRegs[getReg()]));
+  }
+  
   void addRegVFRCOperands(MCInst &Inst, unsigned N) const {
     assert(N == 1 && "Invalid number of operands!");
     Inst.addOperand(MCOperand::createReg(VFRegs[getReg()]));

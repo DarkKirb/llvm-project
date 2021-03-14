@@ -1498,5 +1498,20 @@ let TargetPrefix = "ppc" in {
 
 
 let TargetPrefix = "ppc" in {
+  def int_ppc_paired_l : Intrinsic<[llvm_v2f32_ty], [llvm_ptr_ty], [IntrReadMem, IntrArgMemOnly]>;
+  def int_ppc_paired_lw : Intrinsic<[llvm_v2f32_ty], [llvm_ptr_ty], [IntrReadMem, IntrArgMemOnly]>;
+  def int_ppc_paired_st : Intrinsic<[], [llvm_ptr_ty, llvm_v2f32_ty], [IntrWriteMem, IntrArgMemOnly]>;
+  def int_ppc_paired_stw : Intrinsic<[], [llvm_ptr_ty, llvm_v2f32_ty], [IntrWriteMem, IntrArgMemOnly]>;
+  def int_ppc_paired_madds0: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty, llvm_v2f32_ty], []>;
+  def int_ppc_paired_madds1: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty, llvm_v2f32_ty], []>;
+  def int_ppc_paired_merge00: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty]>;
+  def int_ppc_paired_merge01: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty]>;
+  def int_ppc_paired_merge10: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty]>;
+  def int_ppc_paired_merge11: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty]>;
+  def int_ppc_paired_muls0: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty], []>;
+  def int_ppc_paired_muls1: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty], []>;
+  def int_ppc_paired_sel: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty, llvm_v2f32_ty], []>;
+  def int_ppc_paired_sum0: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty, llvm_v2f32_ty], []>;
+  def int_ppc_paired_sum1: Intrinsic<[llvm_v2f32_ty], [llvm_v2f32_ty, llvm_v2f32_ty, llvm_v2f32_ty], []>;
   def int_ppc_dcbz_l : Intrinsic<[], [llvm_ptr_ty], []>;
 } 

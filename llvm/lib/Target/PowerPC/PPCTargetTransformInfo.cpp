@@ -874,6 +874,7 @@ const char* PPCTTIImpl::getRegisterClassName(unsigned ClassID) const {
 unsigned PPCTTIImpl::getRegisterBitWidth(bool Vector) const {
   if (Vector) {
     if (ST->hasAltivec()) return 128;
+    if (ST->hasPaired()) return 64;
     return 0;
   }
 

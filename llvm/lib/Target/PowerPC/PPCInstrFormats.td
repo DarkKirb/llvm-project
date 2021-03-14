@@ -2189,6 +2189,40 @@ class PSQForm_dw<bits<6> op, dag OOL, dag IOL, string asmstr,
   let Inst{20-31} = d;
 }
 
+class PSNQForm_xw<bits<6> op, bit W, dag OOL, dag IOL, string asmstr,
+                 InstrItinClass itin, list<dag> pattern>
+  : I<4, OOL, IOL, asmstr, itin> {
+  bits<5> D;
+  bits<5> A;
+  bits<5> B;
+
+  let Pattern = pattern;
+
+  let Inst{6-10} = D;
+  let Inst{11-15} = A;
+  let Inst{16-20} = B;
+  let Inst{21} = W;
+  let Inst{22-24} = 0;
+  let Inst{25-30} = op;
+  let Inst{31} = 0; // no record mode supported
+}
+
+class PSNQForm_dw<bits<6> op, bit W, dag OOL, dag IOL, string asmstr,
+                InstrItinClass itin, list<dag> pattern>
+    :I<op, OOL, IOL, asmstr, itin> {
+  bits<5> D;
+  bits<12> d;
+  bits<5> A;
+
+  let Pattern = pattern;
+
+  let Inst{6-10} = D;
+  let Inst{11-15} = A;
+  let Inst{16} = W;
+  let Inst{17-19} = 0;
+  let Inst{20-31} = d;
+}
+
 class PSForm_xcrab<bit ordered, bit high, dag OOL, dag IOL, string asmstr,
                    InstrItinClass itin, list<dag> pattern>
   : I<4, OOL, IOL, asmstr, itin> {

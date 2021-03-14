@@ -250,11 +250,11 @@ PPCRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
       } else {
         return CSR_SVR64_ColdCC_RegMask;
       }
-    } else if (SubTarget.hasAltivec()) {
+    } else if (Subtarget.hasAltivec()) {
       return CSR_SVR32_ColdCC_Altivec_RegMask;
-    } else if (SubTarget.hasPaired()) {
+    } else if (Subtarget.hasPaired()) {
       return CSR_SVR32_ColdCC_Paired_RegMask;
-    } else if (SubTarget.hasSPE()) {
+    } else if (Subtarget.hasSPE()) {
       return CSR_SVR32_ColdCC_SPE_RegMask;
     } else {
       return CSR_SVR32_ColdCC_RegMask;
@@ -358,7 +358,7 @@ BitVector PPCRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
       markSuperRegs(Reserved, *I);
 
   // Reserve Paired Single registers when Paired Single is unavailable.
-  if (!Subtarget.hasAltivec())
+  if (!Subtarget.hasPaired())
     for (TargetRegisterClass::iterator I = PPC::PSRCRegClass.begin(),
                                        IE = PPC::PSRCRegClass.end();
          I != IE; ++I)

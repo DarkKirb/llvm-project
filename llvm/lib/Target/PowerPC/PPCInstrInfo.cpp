@@ -1768,6 +1768,8 @@ void PPCInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     Opc = PPC::OR8;
   else if (PPC::F4RCRegClass.contains(DestReg, SrcReg))
     Opc = PPC::FMR;
+  else if (PPC::PSRCRegClass.contains(DestReg, SrcReg))
+    Opc = PPC::PS_MR;
   else if (PPC::CRRCRegClass.contains(DestReg, SrcReg))
     Opc = PPC::MCRF;
   else if (PPC::VRRCRegClass.contains(DestReg, SrcReg))
@@ -1883,6 +1885,10 @@ unsigned PPCInstrInfo::getSpillIndex(const TargetRegisterClass *RC) const {
     assert(Subtarget.pairedVectorMemops() &&
            "Register unexpected when paired memops are disabled.");
     OpcodeIndex = SOK_PairedVecSpill;
+  } else if (PPC::PSRCRegClass.hasSubClassEq(RC)) {
+    assert(Subtarget.hasPaired() &&
+           "Register unexpected when paired singles are disabled.");
+    OpcodeIndex = SOK_PairedSpill;
   } else {
     llvm_unreachable("Unknown regclass!");
   }

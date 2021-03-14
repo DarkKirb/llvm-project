@@ -98,6 +98,7 @@
 #include <list>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 using namespace llvm;
 
@@ -157,6 +158,8 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM,
     } else {
       addRegisterClass(MVT::f32, &PPC::F4RCRegClass);
       addRegisterClass(MVT::f64, &PPC::F8RCRegClass);
+      if (Subtarget.hasPaired())
+        addRegisterClass(MVT::v2f32, &PPC::PSRCRegClass);
     }
   }
 
@@ -698,6 +701,32 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM,
     setOperationAction(ISD::FMAXNUM_IEEE, MVT::f32, Legal);
     setOperationAction(ISD::FMINNUM_IEEE, MVT::f64, Legal);
     setOperationAction(ISD::FMINNUM_IEEE, MVT::f32, Legal);
+  }
+
+  if (Subtarget.hasPaired()) {
+    setIndexedLoadAction(ISD::PRE_INC, MVT::v2f32, Legal);
+    setIndexedStoreAction(ISD::PRE_INC, MVT::v2f32, Legal);
+    setOperationAction(ISD::STRICT_FADD, MVT::v2f32, Legal);
+    setOperationAction(ISD::STRICT_FSUB, MVT::v2f32, Legal);
+    setOperationAction(ISD::STRICT_FMUL, MVT::v2f32, Legal);
+    setOperationAction(ISD::STRICT_FDIV, MVT::v2f32, Legal);
+    setOperationAction(ISD::STRICT_FMA, MVT::v2f32, Legal);
+    setOperationAction(ISD::STRICT_FP_ROUND, MVT::v2f32, Legal);
+    setOperationAction(ISD::FSIN, MVT::v2f32, Expand);
+    setOperationAction(ISD::FCOS, MVT::v2f32, Expand);
+    setOperationAction(ISD::FSINCOS, MVT::v2f32, Expand);
+    setOperationAction(ISD::FREM, MVT::v2f32, Expand);
+    setOperationAction(ISD::FPOW, MVT::v2f32, Expand);
+    setOperationAction(ISD::FMA, MVT::v2f32, Legal);
+    if(!(TM.Options.UnsafeFPMath))
+      setOperationAction(ISD::FSQRT, MVT::v2f32, Expand);
+    setOperationAction(ISD::SELECT, MVT::v2f32, Expand);
+    setOperationAction(ISD::BITCAST, MVT::v2f32, Expand);
+    setOperationAction(ISD::BUILD_VECTOR, MVT::v2f32, Expand);
+    setOperationAction(ISD::SCALAR_TO_VECTOR, MVT::v2f32, Expand);
+    setOperationAction(ISD::VECTOR_SHUFFLE, MVT::v2f32, Custom);
+    setOperationAction(ISD::EXTRACT_VECTOR_ELT, MVT::v2f32, Expand);
+    setOperationAction(ISD::INSERT_VECTOR_ELT, MVT::v2f32, Expand);
   }
 
   if (Subtarget.hasAltivec()) {
@@ -1625,6 +1654,10 @@ const char *PPCTargetLowering::getTargetNodeName(unsigned Opcode) const {
   case PPCISD::STRICT_FCFIDUS:
     return "PPCISD::STRICT_FCFIDUS";
   case PPCISD::LXVRZX:          return "PPCISD::LXVRZX";
+  case PPCISD::PS_MERGE00: return "PPCISD::PS_MERGE00";
+  case PPCISD::PS_MERGE01: return "PPCISD::PS_MERGE01";
+  case PPCISD::PS_MERGE10: return "PPCISD::PS_MERGE10";
+  case PPCISD::PS_MERGE11: return "PPCISD::PS_MERGE11";
   }
   return nullptr;
 }
@@ -3694,6 +3727,7 @@ static bool CalculateStackSlotUsed(EVT ArgVT, EVT OrigVT, ISD::ArgFlagsTy Flags,
                                    unsigned PtrByteSize, unsigned LinkageSize,
                                    unsigned ParamAreaSize, unsigned &ArgOffset,
                                    unsigned &AvailableFPRs,
+                                   unsigned &AvailablePSRs,
                                    unsigned &AvailableVRs) {
   bool UseMemory = false;
 
@@ -3721,6 +3755,11 @@ static bool CalculateStackSlotUsed(EVT ArgVT, EVT OrigVT, ISD::ArgFlagsTy Flags,
     if (ArgVT == MVT::f32 || ArgVT == MVT::f64)
       if (AvailableFPRs > 0) {
         --AvailableFPRs;
+        return false;
+      }
+    if (ArgVT == MVT::v2f32)
+      if (AvailablePSRs > 0) {
+        --AvailablePSRs;
         return false;
       }
     if (ArgVT == MVT::v4f32 || ArgVT == MVT::v4i32 ||
@@ -3852,6 +3891,9 @@ SDValue PPCTargetLowering::LowerFormalArguments_32SVR4(
         case MVT::v8i16:
         case MVT::v4i32:
           RC = &PPC::VRRCRegClass;
+          break;
+        case MVT::v2f32:
+          RC = &PPC::PSRCRegClass;
           break;
         case MVT::v4f32:
           RC = &PPC::VRRCRegClass;
@@ -4057,6 +4099,7 @@ SDValue PPCTargetLowering::LowerFormalArguments_64SVR4(
 
   const unsigned Num_GPR_Regs = array_lengthof(GPR);
   const unsigned Num_FPR_Regs = useSoftFloat() ? 0 : 13;
+  const unsigned Num_PSR_Regs = useSoftFloat() ? 0 : 13;
   const unsigned Num_VR_Regs  = array_lengthof(VR);
 
   // Do a first pass over the arguments to determine whether the ABI
@@ -4069,6 +4112,7 @@ SDValue PPCTargetLowering::LowerFormalArguments_64SVR4(
   unsigned ParamAreaSize = Num_GPR_Regs * PtrByteSize;
   unsigned NumBytes = LinkageSize;
   unsigned AvailableFPRs = Num_FPR_Regs;
+  unsigned AvailablePSRs = Num_PSR_Regs;
   unsigned AvailableVRs = Num_VR_Regs;
   for (unsigned i = 0, e = Ins.size(); i != e; ++i) {
     if (Ins[i].Flags.isNest())
@@ -4076,7 +4120,7 @@ SDValue PPCTargetLowering::LowerFormalArguments_64SVR4(
 
     if (CalculateStackSlotUsed(Ins[i].VT, Ins[i].ArgVT, Ins[i].Flags,
                                PtrByteSize, LinkageSize, ParamAreaSize,
-                               NumBytes, AvailableFPRs, AvailableVRs))
+                               NumBytes, AvailableFPRs, AvailablePSRs, AvailableVRs))
       HasParameterArea = true;
   }
 
@@ -4525,11 +4569,13 @@ needStackSlotPassParameters(const PPCSubtarget &Subtarget,
 
   const unsigned NumGPRs = array_lengthof(GPR);
   const unsigned NumFPRs = 13;
+  const unsigned NumPSRs = 13;
   const unsigned NumVRs = array_lengthof(VR);
   const unsigned ParamAreaSize = NumGPRs * PtrByteSize;
 
   unsigned NumBytes = LinkageSize;
   unsigned AvailableFPRs = NumFPRs;
+  unsigned AvailablePSRs = NumPSRs;
   unsigned AvailableVRs = NumVRs;
 
   for (const ISD::OutputArg& Param : Outs) {
@@ -4537,7 +4583,7 @@ needStackSlotPassParameters(const PPCSubtarget &Subtarget,
 
     if (CalculateStackSlotUsed(Param.VT, Param.ArgVT, Param.Flags, PtrByteSize,
                                LinkageSize, ParamAreaSize, NumBytes,
-                               AvailableFPRs, AvailableVRs))
+                               AvailableFPRs, AvailablePSRs, AvailableVRs))
       return true;
   }
   return false;
@@ -5746,11 +5792,14 @@ SDValue PPCTargetLowering::LowerCall_64SVR4(
   // area is 32 bytes reserved space for [SP][CR][LR][TOC].
   unsigned LinkageSize = Subtarget.getFrameLowering()->getLinkageSize();
   unsigned NumBytes = LinkageSize;
-  unsigned GPR_idx = 0, FPR_idx = 0, VR_idx = 0;
+  unsigned GPR_idx = 0, FPR_idx = 0, PSR_idx = 0, VR_idx = 0;
 
   static const MCPhysReg GPR[] = {
     PPC::X3, PPC::X4, PPC::X5, PPC::X6,
     PPC::X7, PPC::X8, PPC::X9, PPC::X10,
+  };
+  static const MCPhysReg PSR[] = {
+      PPC::PSF1, PPC::PSF2, PPC::PSF3, PPC::PSF4, PPC::PSF5, PPC::PSF6, PPC::PSF7, PPC::PSF8,
   };
   static const MCPhysReg VR[] = {
     PPC::V2, PPC::V3, PPC::V4, PPC::V5, PPC::V6, PPC::V7, PPC::V8,
@@ -5759,6 +5808,7 @@ SDValue PPCTargetLowering::LowerCall_64SVR4(
 
   const unsigned NumGPRs = array_lengthof(GPR);
   const unsigned NumFPRs = useSoftFloat() ? 0 : 13;
+  const unsigned NumPSRs = useSoftFloat() ? 0 : array_lengthof(PSR);
   const unsigned NumVRs  = array_lengthof(VR);
 
   // On ELFv2, we can avoid allocating the parameter area if all the arguments
@@ -5769,20 +5819,21 @@ SDValue PPCTargetLowering::LowerCall_64SVR4(
   if (!HasParameterArea) {
     unsigned ParamAreaSize = NumGPRs * PtrByteSize;
     unsigned AvailableFPRs = NumFPRs;
+    unsigned AvailablePSRs = NumPSRs;
     unsigned AvailableVRs = NumVRs;
     unsigned NumBytesTmp = NumBytes;
     for (unsigned i = 0; i != NumOps; ++i) {
       if (Outs[i].Flags.isNest()) continue;
       if (CalculateStackSlotUsed(Outs[i].VT, Outs[i].ArgVT, Outs[i].Flags,
                                  PtrByteSize, LinkageSize, ParamAreaSize,
-                                 NumBytesTmp, AvailableFPRs, AvailableVRs))
+                                 NumBytesTmp, AvailableFPRs, AvailablePSRs, AvailableVRs))
         HasParameterArea = true;
     }
   }
 
   // When using the fast calling convention, we don't provide backing for
   // arguments that will be in registers.
-  unsigned NumGPRsUsed = 0, NumFPRsUsed = 0, NumVRsUsed = 0;
+  unsigned NumGPRsUsed = 0, NumFPRsUsed = 0, NumPSRsUsed = 0, NumVRsUsed = 0;
 
   // Avoid allocating parameter area for fastcc functions if all the arguments
   // can be passed in the registers.
@@ -5810,6 +5861,10 @@ SDValue PPCTargetLowering::LowerCall_64SVR4(
         case MVT::i32:
         case MVT::i64:
           if (++NumGPRsUsed <= NumGPRs)
+            continue;
+          break;
+        case MVT::v2f32:
+          if (++NumPSRsUsed <= NumPSRs)
             continue;
           break;
         case MVT::v4i32:
@@ -6181,6 +6236,58 @@ SDValue PPCTargetLowering::LowerCall_64SVR4(
       }
       break;
     }
+    case MVT::v2f32:
+      // These can be scalar arguments or elements of a vector array type
+      // passed directly.  The latter are used to implement ELFv2 homogenous
+      // vector aggregates.
+
+      // For a varargs call, named arguments go into VRs or on the stack as
+      // usual; unnamed arguments always go to the stack or the corresponding
+      // GPRs when within range.  For now, we always put the value in both
+      // locations (or even all three).
+      if (CFlags.IsVarArg) {
+        assert(HasParameterArea &&
+               "Parameter area must exist if we have a varargs call.");
+        // We could elide this store in the case where the object fits
+        // entirely in R registers.  Maybe later.
+        SDValue Store =
+            DAG.getStore(Chain, dl, Arg, PtrOff, MachinePointerInfo());
+        MemOpChains.push_back(Store);
+        if (PSR_idx != NumPSRs) {
+          SDValue Load =
+              DAG.getLoad(MVT::v2f32, dl, Store, PtrOff, MachinePointerInfo());
+          MemOpChains.push_back(Load.getValue(1));
+          RegsToPass.push_back(std::make_pair(PSR[PSR_idx++], Load));
+        }
+        ArgOffset += 8;
+        for (unsigned i = 0; i < 8; i += PtrByteSize) {
+          if (GPR_idx == NumGPRs)
+            break;
+          SDValue Ix = DAG.getNode(ISD::ADD, dl, PtrVT, PtrOff,
+                                   DAG.getConstant(i, dl, PtrVT));
+          SDValue Load =
+              DAG.getLoad(PtrVT, dl, Store, Ix, MachinePointerInfo());
+          MemOpChains.push_back(Load.getValue(1));
+          RegsToPass.push_back(std::make_pair(GPR[GPR_idx++], Load));
+        }
+        break;
+      }
+      if (PSR_idx != NumPSRs) {
+        RegsToPass.push_back(std::make_pair(PSR[PSR_idx++], Arg));
+      } else {
+        if (IsFastCall)
+          ComputePtrOff();
+        assert(HasParameterArea &&
+               "Parameter area must exist to pass an argument in memory.");
+        LowerMemOpCallTo(DAG, MF, Chain, Arg, PtrOff, SPDiff, ArgOffset, true,
+                         CFlags.IsTailCall, true, MemOpChains,
+                         TailCallArguments, dl);
+        if (IsFastCall)
+           ArgOffset += 8;
+      }
+      if (!IsFastCall)
+        ArgOffset += 8;
+      break;
     case MVT::v4f32:
     case MVT::v4i32:
     case MVT::v8i16:
@@ -6573,6 +6680,8 @@ static const TargetRegisterClass *getRegClassForSVT(MVT::SimpleValueType SVT,
     return &PPC::F4RCRegClass;
   case MVT::f64:
     return &PPC::F8RCRegClass;
+  case MVT::v2f32:
+    return &PPC::PSRCRegClass;
   case MVT::v4f32:
   case MVT::v4i32:
   case MVT::v8i16:
@@ -9476,6 +9585,31 @@ SDValue PPCTargetLowering::LowerROTL(SDValue Op, SelectionDAG &DAG) const {
   return DAG.getNode(ISD::BITCAST, dl, MVT::v1i128, OROp);
 }
 
+/// LowerPairedVECTOR_SHUFFLE
+SDValue PPCTargetLowering::LowerPairedVECTOR_SHUFFLE(SDValue Op,
+                                                     SelectionDAG &DAG) const {
+  SDLoc dl(Op);
+  ShuffleVectorSDNode *SVOp = cast<ShuffleVectorSDNode>(Op);
+  
+  // Normalize the shuffle. This turns a shuffle(a, b, (3, 1)) into a merge11(b, a)
+  int IdxA = SVOp->getMaskElt(0);
+  int IdxB = SVOp->getMaskElt(1);
+
+  if (SVOp->isSplat()) {
+    IdxA = SVOp->getSplatIndex();
+    IdxB = SVOp->getSplatIndex();
+  }
+
+  SDValue SrcA = Op.getOperand((IdxA >> 1) & 1);
+  SDValue SrcB = Op.getOperand((IdxB >> 1) & 1);
+
+  unsigned OP = (IdxA & 1)
+                    ? ((IdxB & 1) ? PPCISD::PS_MERGE11 : PPCISD::PS_MERGE10)
+                    : ((IdxB & 1) ? PPCISD::PS_MERGE01 : PPCISD::PS_MERGE00);
+
+  return DAG.getNode(OP, dl, MVT::v2f32, SrcA, SrcB);
+}
+
 /// LowerVECTOR_SHUFFLE - Return the code we lower for VECTOR_SHUFFLE.  If this
 /// is a shuffle we can handle in a single instruction, return it.  Otherwise,
 /// return the code it can be lowered into.  Worst case, it can always be
@@ -9485,6 +9619,8 @@ SDValue PPCTargetLowering::LowerVECTOR_SHUFFLE(SDValue Op,
   SDLoc dl(Op);
   SDValue V1 = Op.getOperand(0);
   SDValue V2 = Op.getOperand(1);
+  if(V1.getSimpleValueType() == MVT::v2f32)
+    return this->LowerPairedVECTOR_SHUFFLE(Op, DAG);
   ShuffleVectorSDNode *SVOp = cast<ShuffleVectorSDNode>(Op);
 
   // Any nodes that were combined in the target-independent combiner prior
