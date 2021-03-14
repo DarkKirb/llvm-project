@@ -4,7 +4,7 @@
 define <2 x float> @load(<2 x float> * %pos) {
 ; CHECK-LABEL: load:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_lx psf1, 0, r3
+; CHECK-NEXT:    ps_lx f1, 0, r3
 ; CHECK-NEXT:    blr
     %1 = load <2 x float>, <2 x float> * %pos
     ret <2 x float> %1
@@ -13,7 +13,7 @@ define <2 x float> @load(<2 x float> * %pos) {
 define void @store(<2 x float> * %pos, <2 x float> %val) {
 ; CHECK-LABEL: store:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_stx psf1, 0, r3
+; CHECK-NEXT:    ps_stx f1, 0, r3
 ; CHECK-NEXT:    blr
     store <2 x float> %val, <2 x float> * %pos
     ret void
@@ -30,10 +30,10 @@ define <2 x float> @loadw(float * %pos) {
 ; CHECK-NEXT:    stw r4, 24(r1)
 ; CHECK-NEXT:    stw r3, 16(r1)
 ; CHECK-NEXT:    addi r3, r1, 24
-; CHECK-NEXT:    ps_lx psf0, 0, r3
+; CHECK-NEXT:    ps_lx f0, 0, r3
 ; CHECK-NEXT:    addi r3, r1, 16
-; CHECK-NEXT:    ps_lx psf1, 0, r3
-; CHECK-NEXT:    ps_merge00 psf1, psf1, psf0
+; CHECK-NEXT:    ps_lx f1, 0, r3
+; CHECK-NEXT:    ps_merge00 f1, f1, f0
 ; CHECK-NEXT:    addi r1, r1, 32
 ; CHECK-NEXT:    blr
     %1 = load float, float * %pos
@@ -47,7 +47,7 @@ define void @storew(float * %pos, <2 x float> %val) {
 ; CHECK-NEXT:    stwu r1, -16(r1)
 ; CHECK-NEXT:    .cfi_def_cfa_offset 16
 ; CHECK-NEXT:    addi r4, r1, 8
-; CHECK-NEXT:    ps_stx psf1, 0, r4
+; CHECK-NEXT:    ps_stx f1, 0, r4
 ; CHECK-NEXT:    lwz r4, 8(r1)
 ; CHECK-NEXT:    stw r4, 0(r3)
 ; CHECK-NEXT:    addi r1, r1, 16
@@ -60,7 +60,7 @@ define void @storew(float * %pos, <2 x float> %val) {
 define <2 x float> @abs(<2 x float> %a) {
 ; CHECK-LABEL: abs:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_abs psf1, psf1
+; CHECK-NEXT:    ps_abs f1, f1
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.fabs.v2f32(<2 x float> %a)
     ret <2 x float> %res
@@ -69,7 +69,7 @@ define <2 x float> @abs(<2 x float> %a) {
 define <2 x float> @add(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: add:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_add psf1, psf1, psf2
+; CHECK-NEXT:    ps_add f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = fadd <2 x float> %a, %b
     ret <2 x float> %res
@@ -78,7 +78,7 @@ define <2 x float> @add(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @div(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: div:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_div psf1, psf1, psf2
+; CHECK-NEXT:    ps_div f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = fdiv <2 x float> %a, %b
     ret <2 x float> %res
@@ -87,7 +87,7 @@ define <2 x float> @div(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @madd(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: madd:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_madd psf1, psf1, psf2, psf3
+; CHECK-NEXT:    ps_madd f1, f1, f2, f3
 ; CHECK-NEXT:    blr
     %d = fmul <2 x float> %a, %b
     %res = fadd <2 x float> %d, %c
@@ -97,7 +97,7 @@ define <2 x float> @madd(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @madds0(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: madds0:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_madds0 psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_madds0 f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.madds0(<2 x float> %a, <2 x float> %b, <2 x float> %c)
     ret <2 x float> %res
@@ -106,7 +106,7 @@ define <2 x float> @madds0(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @madds0_1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: madds0_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_madds0 psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_madds0 f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %b00 = shufflevector <2 x float> %b, <2 x float> undef, <2 x i32> <i32 0, i32 0>
     %d = fmul <2 x float> %a, %b00
@@ -117,7 +117,7 @@ define <2 x float> @madds0_1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @madds1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: madds1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_madds1 psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_madds1 f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.madds1(<2 x float> %a, <2 x float> %b, <2 x float> %c)
     ret <2 x float> %res
@@ -126,7 +126,7 @@ define <2 x float> @madds1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @madds1_1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: madds1_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_madds1 psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_madds1 f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %b11 = shufflevector <2 x float> %b, <2 x float> undef, <2 x i32> <i32 1, i32 1>
     %d = fmul <2 x float> %a, %b11
@@ -137,7 +137,7 @@ define <2 x float> @madds1_1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @merge00(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: merge00:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_merge00 psf1, psf1, psf2
+; CHECK-NEXT:    ps_merge00 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.merge00(<2 x float> %a, <2 x float> %b)
     ret <2 x float> %res
@@ -146,7 +146,7 @@ define <2 x float> @merge00(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @merge00_1(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: merge00_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_merge00 psf1, psf1, psf2
+; CHECK-NEXT:    ps_merge00 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = shufflevector <2 x float> %a, <2 x float> %b, <2 x i32> <i32 0, i32 2>
     ret <2 x float> %res
@@ -155,7 +155,7 @@ define <2 x float> @merge00_1(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @merge01(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: merge01:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_merge01 psf1, psf1, psf2
+; CHECK-NEXT:    ps_merge01 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.merge01(<2 x float> %a, <2 x float> %b)
     ret <2 x float> %res
@@ -164,7 +164,7 @@ define <2 x float> @merge01(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @merge01_1(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: merge01_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_merge01 psf1, psf1, psf2
+; CHECK-NEXT:    ps_merge01 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = shufflevector <2 x float> %a, <2 x float> %b, <2 x i32> <i32 0, i32 3>
     ret <2 x float> %res
@@ -173,7 +173,7 @@ define <2 x float> @merge01_1(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @merge10(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: merge10:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_merge10 psf1, psf1, psf2
+; CHECK-NEXT:    ps_merge10 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.merge10(<2 x float> %a, <2 x float> %b)
     ret <2 x float> %res
@@ -182,7 +182,7 @@ define <2 x float> @merge10(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @merge10_1(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: merge10_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_merge10 psf1, psf1, psf2
+; CHECK-NEXT:    ps_merge10 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = shufflevector <2 x float> %a, <2 x float> %b, <2 x i32> <i32 1, i32 2>
     ret <2 x float> %res
@@ -191,7 +191,7 @@ define <2 x float> @merge10_1(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @merge11(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: merge11:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_merge11 psf1, psf1, psf2
+; CHECK-NEXT:    ps_merge11 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.merge11(<2 x float> %a, <2 x float> %b)
     ret <2 x float> %res
@@ -200,7 +200,7 @@ define <2 x float> @merge11(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @merge11_1(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: merge11_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_merge11 psf1, psf1, psf2
+; CHECK-NEXT:    ps_merge11 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = shufflevector <2 x float> %a, <2 x float> %b, <2 x i32> <i32 1, i32 3>
     ret <2 x float> %res
@@ -209,7 +209,7 @@ define <2 x float> @merge11_1(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @mr(<2 x float> %unused, <2 x float> %a) {
 ; CHECK-LABEL: mr:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_mr psf1, psf2
+; CHECK-NEXT:    ps_mr f1, f2
 ; CHECK-NEXT:    blr
     ret <2 x float> %a
 }
@@ -217,7 +217,7 @@ define <2 x float> @mr(<2 x float> %unused, <2 x float> %a) {
 define <2 x float> @msub(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: msub:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_msub psf1, psf1, psf2, psf3
+; CHECK-NEXT:    ps_msub f1, f1, f2, f3
 ; CHECK-NEXT:    blr
     %d = fmul <2 x float> %a, %b
     %res = fsub <2 x float> %d, %c
@@ -227,7 +227,7 @@ define <2 x float> @msub(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @mul(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: mul:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_mul psf1, psf1, psf2
+; CHECK-NEXT:    ps_mul f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = fmul <2 x float> %a, %b
     ret <2 x float> %res
@@ -236,7 +236,7 @@ define <2 x float> @mul(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @muls0(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: muls0:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_muls0 psf1, psf1, psf2
+; CHECK-NEXT:    ps_muls0 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.muls0(<2 x float> %a, <2 x float> %b)
     ret <2 x float> %res
@@ -245,7 +245,7 @@ define <2 x float> @muls0(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @muls0_1(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: muls0_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_muls0 psf1, psf1, psf2
+; CHECK-NEXT:    ps_muls0 f1, f1, f2
 ; CHECK-NEXT:    blr
     %b00 = shufflevector <2 x float> %b, <2 x float> undef, <2 x i32> <i32 0, i32 0>
     %res = fmul <2 x float> %a, %b00
@@ -255,7 +255,7 @@ define <2 x float> @muls0_1(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @muls1(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: muls1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_muls1 psf1, psf1, psf2
+; CHECK-NEXT:    ps_muls1 f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.muls1(<2 x float> %a, <2 x float> %b)
     ret <2 x float> %res
@@ -264,7 +264,7 @@ define <2 x float> @muls1(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @muls1_1(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: muls1_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_muls1 psf1, psf1, psf2
+; CHECK-NEXT:    ps_muls1 f1, f1, f2
 ; CHECK-NEXT:    blr
     %b11 = shufflevector <2 x float> %b, <2 x float> undef, <2 x i32> <i32 1, i32 1>
     %res = fmul <2 x float> %a, %b11
@@ -274,7 +274,7 @@ define <2 x float> @muls1_1(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @nabs(<2 x float> %a) {
 ; CHECK-LABEL: nabs:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_nabs psf1, psf1
+; CHECK-NEXT:    ps_nabs f1, f1
 ; CHECK-NEXT:    blr
     %1 = call <2 x float> @llvm.fabs.v2f32(<2 x float> %a)
     %res = fneg <2 x float> %1
@@ -284,7 +284,7 @@ define <2 x float> @nabs(<2 x float> %a) {
 define <2 x float> @neg(<2 x float> %a) {
 ; CHECK-LABEL: neg:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_neg psf1, psf1
+; CHECK-NEXT:    ps_neg f1, f1
 ; CHECK-NEXT:    blr
     %res = fneg <2 x float> %a
     ret <2 x float> %res
@@ -293,7 +293,7 @@ define <2 x float> @neg(<2 x float> %a) {
 define <2 x float> @nmadd(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: nmadd:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_nmadd psf1, psf1, psf2, psf3
+; CHECK-NEXT:    ps_nmadd f1, f1, f2, f3
 ; CHECK-NEXT:    blr
     %d = fmul <2 x float> %a, %b
     %e = fadd <2 x float> %d, %c
@@ -304,7 +304,7 @@ define <2 x float> @nmadd(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @nmsub(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: nmsub:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_nmsub psf1, psf1, psf2, psf3
+; CHECK-NEXT:    ps_nmsub f1, f1, f2, f3
 ; CHECK-NEXT:    blr
     %d = fmul <2 x float> %a, %b
     %e = fsub <2 x float> %d, %c
@@ -315,7 +315,7 @@ define <2 x float> @nmsub(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @sel(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: sel:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_sel psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_sel f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.sel(<2 x float> %a, <2 x float> %b, <2 x float> %c)
     ret <2 x float> %res
@@ -324,7 +324,7 @@ define <2 x float> @sel(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @sub(<2 x float> %a, <2 x float> %b) {
 ; CHECK-LABEL: sub:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_sub psf1, psf1, psf2
+; CHECK-NEXT:    ps_sub f1, f1, f2
 ; CHECK-NEXT:    blr
     %res = fsub <2 x float> %a, %b
     ret <2 x float> %res
@@ -333,7 +333,7 @@ define <2 x float> @sub(<2 x float> %a, <2 x float> %b) {
 define <2 x float> @sum0(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: sum0:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_sum0 psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_sum0 f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.sum0(<2 x float> %a, <2 x float> %b, <2 x float> %c)
     ret <2 x float> %res
@@ -342,7 +342,7 @@ define <2 x float> @sum0(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @sum0_1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: sum0_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_sum0 psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_sum0 f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %a00 = shufflevector <2 x float> %a, <2 x float> undef, <2 x i32> <i32 0, i32 0>
     %b11 = shufflevector <2 x float> %b, <2 x float> undef, <2 x i32> <i32 1, i32 1>
@@ -354,7 +354,7 @@ define <2 x float> @sum0_1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @sum1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: sum1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_sum1 psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_sum1 f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %res = tail call <2 x float> @llvm.ppc.paired.sum1(<2 x float> %a, <2 x float> %b, <2 x float> %c)
     ret <2 x float> %res
@@ -363,7 +363,7 @@ define <2 x float> @sum1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 define <2 x float> @sum1_1(<2 x float> %a, <2 x float> %b, <2 x float> %c) {
 ; CHECK-LABEL: sum1_1:
 ; CHECK:       # %bb.0:
-; CHECK-NEXT:    ps_sum1 psf1, psf1, psf3, psf2
+; CHECK-NEXT:    ps_sum1 f1, f1, f3, f2
 ; CHECK-NEXT:    blr
     %a00 = shufflevector <2 x float> %a, <2 x float> undef, <2 x i32> <i32 0, i32 0>
     %b11 = shufflevector <2 x float> %b, <2 x float> undef, <2 x i32> <i32 1, i32 1>

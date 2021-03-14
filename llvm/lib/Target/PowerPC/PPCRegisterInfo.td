@@ -149,7 +149,7 @@ foreach Index = 0-31 in {
 
 // Paired-Single registers
 foreach Index = 0-31 in {
-  def PSF#Index : FPR<Index, "psf"#Index>,
+  def PSF#Index : PSF<Index, "f"#Index>,
                   DwarfRegNum<[!add(Index, 992), !add(Index, 992)]>;
 }
 
