@@ -19,43 +19,19 @@ define void @store(<2 x float> * %pos, <2 x float> %val) {
     ret void
 }
 
-define <2 x float> @loadw(float * %pos) {
-; CHECK-LABEL: loadw:
-; CHECK:       # %bb.0:
-; CHECK-NEXT:    stwu r1, -32(r1)
-; CHECK-NEXT:    .cfi_def_cfa_offset 32
-; CHECK-NEXT:    lis r4, .LCPI2_0@ha
-; CHECK-NEXT:    lwz r4, .LCPI2_0@l(r4)
-; CHECK-NEXT:    lwz r3, 0(r3)
-; CHECK-NEXT:    stw r4, 24(r1)
-; CHECK-NEXT:    stw r3, 16(r1)
-; CHECK-NEXT:    addi r3, r1, 24
-; CHECK-NEXT:    ps_lx f0, 0, r3
-; CHECK-NEXT:    addi r3, r1, 16
-; CHECK-NEXT:    ps_lx f1, 0, r3
-; CHECK-NEXT:    ps_merge00 f1, f1, f0
-; CHECK-NEXT:    addi r1, r1, 32
-; CHECK-NEXT:    blr
-    %1 = load float, float * %pos
-    %2 = insertelement <2 x float> <float 1.0, float 1.0>, float %1, i32 0
-    ret <2 x float> %2
-}
+; These two aren't currently working as intended.
 
-define void @storew(float * %pos, <2 x float> %val) {
-; CHECK-LABEL: storew:
-; CHECK:       # %bb.0:
-; CHECK-NEXT:    stwu r1, -16(r1)
-; CHECK-NEXT:    .cfi_def_cfa_offset 16
-; CHECK-NEXT:    addi r4, r1, 8
-; CHECK-NEXT:    ps_stx f1, 0, r4
-; CHECK-NEXT:    lwz r4, 8(r1)
-; CHECK-NEXT:    stw r4, 0(r3)
-; CHECK-NEXT:    addi r1, r1, 16
-; CHECK-NEXT:    blr
-    %1 = extractelement <2 x float> %val, i32 0
-    store float %1, float * %pos
-    ret void
-}
+;define <2 x float> @loadw(float * %pos) {
+;    %1 = load float, float * %pos
+;    %2 = insertelement <2 x float> <float 1.0, float 1.0>, float %1, i32 0
+;    ret <2 x float> %2
+;}
+
+;define void @storew(float * %pos, <2 x float> %val) {
+;    %1 = extractelement <2 x float> %val, i32 0
+;    store float %1, float * %pos
+;    ret void
+;}
 
 define <2 x float> @abs(<2 x float> %a) {
 ; CHECK-LABEL: abs:

@@ -98,7 +98,6 @@
 #include <list>
 #include <utility>
 #include <vector>
-#include <iostream>
 
 using namespace llvm;
 
@@ -711,13 +710,14 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM,
     setOperationAction(ISD::STRICT_FMUL, MVT::v2f32, Legal);
     setOperationAction(ISD::STRICT_FDIV, MVT::v2f32, Legal);
     setOperationAction(ISD::STRICT_FMA, MVT::v2f32, Legal);
-    setOperationAction(ISD::STRICT_FP_ROUND, MVT::v2f32, Legal);
+    setOperationAction(ISD::MUL, MVT::v2f32, Legal);
+    setOperationAction(ISD::FMA, MVT::v2f32, Legal);
+    setOperationAction(ISD::FDIV, MVT::v2f32, Legal);
     setOperationAction(ISD::FSIN, MVT::v2f32, Expand);
     setOperationAction(ISD::FCOS, MVT::v2f32, Expand);
     setOperationAction(ISD::FSINCOS, MVT::v2f32, Expand);
     setOperationAction(ISD::FREM, MVT::v2f32, Expand);
     setOperationAction(ISD::FPOW, MVT::v2f32, Expand);
-    setOperationAction(ISD::FMA, MVT::v2f32, Legal);
     if(!(TM.Options.UnsafeFPMath))
       setOperationAction(ISD::FSQRT, MVT::v2f32, Expand);
     setOperationAction(ISD::SELECT, MVT::v2f32, Expand);
@@ -727,6 +727,14 @@ PPCTargetLowering::PPCTargetLowering(const PPCTargetMachine &TM,
     setOperationAction(ISD::VECTOR_SHUFFLE, MVT::v2f32, Custom);
     setOperationAction(ISD::EXTRACT_VECTOR_ELT, MVT::v2f32, Expand);
     setOperationAction(ISD::INSERT_VECTOR_ELT, MVT::v2f32, Expand);
+    setCondCodeAction(ISD::SETUO, MVT::v2f32, Expand);
+    setCondCodeAction(ISD::SETUEQ, MVT::v2f32, Expand);
+    setCondCodeAction(ISD::SETO, MVT::v2f32, Expand);
+    setCondCodeAction(ISD::SETONE, MVT::v2f32, Expand);
+    setOperationAction(ISD::LOAD, MVT::v2f32, Legal);
+    setOperationAction(ISD::STORE, MVT::v2f32, Legal);
+    setOperationAction(ISD::FNEG, MVT::v2f32, Legal);
+    setOperationAction(ISD::FABS, MVT::v2f32, Legal);
   }
 
   if (Subtarget.hasAltivec()) {
@@ -6238,10 +6246,9 @@ SDValue PPCTargetLowering::LowerCall_64SVR4(
     }
     case MVT::v2f32:
       // These can be scalar arguments or elements of a vector array type
-      // passed directly.  The latter are used to implement ELFv2 homogenous
-      // vector aggregates.
+      // passed directly.
 
-      // For a varargs call, named arguments go into VRs or on the stack as
+      // For a varargs call, named arguments go into PSFs or on the stack as
       // usual; unnamed arguments always go to the stack or the corresponding
       // GPRs when within range.  For now, we always put the value in both
       // locations (or even all three).
