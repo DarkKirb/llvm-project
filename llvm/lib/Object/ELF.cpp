@@ -173,6 +173,12 @@ StringRef llvm::object::getELFRelocationTypeName(uint32_t Machine,
       break;
     }
     break;
+  case ELF::EM_R8:
+    switch (Type) {
+#include "llvm/BinaryFormat/ELFRelocs/R8.def"
+    default:
+      break;
+    }
   default:
     break;
   }

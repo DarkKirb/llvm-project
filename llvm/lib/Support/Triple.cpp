@@ -59,6 +59,8 @@ StringRef Triple::getArchTypeName(ArchType Kind) {
   case ppc:            return "powerpc";
   case ppcle:          return "powerpcle";
   case r600:           return "r600";
+  case r8:
+    return "r8";
   case renderscript32: return "renderscript32";
   case renderscript64: return "renderscript64";
   case riscv32:        return "riscv32";
@@ -169,6 +171,8 @@ StringRef Triple::getArchTypePrefix(ArchType Kind) {
 
   case loongarch32:
   case loongarch64: return "loongarch";
+  case r8:
+    return "r8";
 
   case dxil:        return "dx";
   }
@@ -370,6 +374,7 @@ Triple::ArchType Triple::getArchTypeForLLVMName(StringRef Name) {
     .Case("loongarch32", loongarch32)
     .Case("loongarch64", loongarch64)
     .Case("dxil", dxil)
+    .Case("r8", r8)
     .Default(UnknownArch);
 }
 
@@ -511,6 +516,7 @@ static Triple::ArchType parseArch(StringRef ArchName) {
     .Case("loongarch32", Triple::loongarch32)
     .Case("loongarch64", Triple::loongarch64)
     .Case("dxil", Triple::dxil)
+    .Case("r8", r8)
     .Default(Triple::UnknownArch);
 
   // Some architectures require special parsing logic just to compute the
@@ -823,6 +829,7 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
   case Triple::ppc64le:
   case Triple::ppcle:
   case Triple::r600:
+  case Triple::r8:
   case Triple::renderscript32:
   case Triple::renderscript64:
   case Triple::riscv32:
@@ -1382,6 +1389,7 @@ static unsigned getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
 
   case llvm::Triple::avr:
   case llvm::Triple::msp430:
+  case llvm::Triple::r8:
     return 16;
 
   case llvm::Triple::aarch64_32:
@@ -1469,6 +1477,7 @@ Triple Triple::get32BitArchVariant() const {
   case Triple::bpfeb:
   case Triple::bpfel:
   case Triple::msp430:
+  case Triple::r8:
   case Triple::systemz:
   case Triple::ve:
     T.setArch(UnknownArch);
@@ -1553,6 +1562,7 @@ Triple Triple::get64BitArchVariant() const {
   case Triple::m68k:
   case Triple::msp430:
   case Triple::r600:
+  case Triple::r8:
   case Triple::shave:
   case Triple::sparcel:
   case Triple::tce:

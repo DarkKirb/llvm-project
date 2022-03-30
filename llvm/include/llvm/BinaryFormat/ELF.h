@@ -320,6 +320,7 @@ enum {
   EM_VE = 251,            // NEC SX-Aurora VE
   EM_CSKY = 252,          // C-SKY 32-bit processor
   EM_LOONGARCH = 258,     // LoongArch
+  EM_R8 = 0x5238,         // R8
 };
 
 // Object file classes.
@@ -923,6 +924,14 @@ enum : unsigned {
 enum {
 #include "ELFRelocs/LoongArch.def"
 };
+
+// R8 specific e_flags
+// Nothing yet
+
+// ELF Relocation types for R8
+enum {
+#include "ELFRelocs/R8.def"
+}
 
 #undef ELF_RELOC
 
